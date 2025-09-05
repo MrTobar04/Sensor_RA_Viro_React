@@ -1,11 +1,17 @@
-api\node_modules
-.env
-Visualizador\node_modules
+# .gitignore para monorepo: root API (Node) + Visualizador (React Native + @viro-community/react-viro)
+# Hecho para: evitar ignorar archivos que deben comitearse (p. ej. gradle wrapper, lockfiles)
+
 # =========================
-# General
+# General / SO
 # =========================
 .DS_Store
 Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+$RECYCLE.BIN/
+
+# Logs
 *.log
 logs
 npm-debug.log*
@@ -13,80 +19,92 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
-package-lock.json
-yarn.lock
 
+# =========================
 # Environment variables
+# =========================
+# Ignorar archivos .env locales y secretos. No ignorar archivos de ejemplo (.env.example)
 .env
 .env.*.local
 
 # =========================
-# Node.js (API + RN Metro)
+# Node.js / JavaScript
 # =========================
+# Ignorar node_modules en cualquier subcarpeta
 node_modules/
+
+# Ignorar artefactos de build / caches
 dist/
 build/
 .cache/
 .nyc_output/
 coverage/
 
+# Mantener lockfiles en el control de versiones (recomendado). NO IGNORAR package-lock.json ni yarn.lock
+
 # =========================
 # React Native (Visualizador/)
 # =========================
-Visualizador/node_modules/
-Visualizador/dist/
-Visualizador/build/
-Visualizador/.expo/
-Visualizador/.expo-shared/
-Visualizador/.vscode/
-Visualizador/.idea/
-Visualizador/.watchmanconfig
-Visualizador/metro-cache/
-Visualizador/.bundle/
-Visualizador/.gradle/
-Visualizador/.cxx/
-Visualizador/android/.gradle/
-Visualizador/android/app/build/
-Visualizador/android/app/.cxx/
-Visualizador/android/build/
-Visualizador/android/local.properties
-Visualizador/android/gradle.properties
-Visualizador/android/gradlew
-Visualizador/android/gradlew.bat
-Visualizador/android/gradle/
-Visualizador/android/captures/
-Visualizador/ios/build/
-Visualizador/ios/Pods/
-Visualizador/ios/Podfile.lock
-Visualizador/ios/*.xcodeproj/xcuserdata/
-Visualizador/ios/*.xcworkspace/xcuserdata/
-Visualizador/ios/.generated/
-Visualizador/ios/tmp/
-Visualizador/ios/DerivedData/
+# Si quieres ignorar solo para la app RN, los patrones siguientes aplican a cualquier subcarpeta
 
-# Viro assets (if you generate temp AR/VR assets locally)
-Visualizador/.virocache/
+# Metro, caches y artefactos temporales
+**/android/.gradle/
+**/.gradle/
+**/.cxx/
+**/metro-cache/
+**/.bundle/
+**/.virocache/
 
-# =========================
-# OS files
-# =========================
-ehthumbs.db
-Icon?
-Desktop.ini
-$RECYCLE.BIN/
+# Build outputs
+**/android/app/build/
+**/android/build/
+**/ios/build/
 
-# =========================
-# IDE / Editors
-# =========================
+# Android local properties (contiene rutas locales, SDK path)
+**/android/local.properties
+
+# No ignorar el Gradle wrapper (gradlew, gradlew.bat, gradle/wrapper/) — deben estar versionados
+# No ignorar android/gradle/wrapper/gradle-wrapper.jar ni gradle-wrapper.properties
+
+# No ignorar archivos de configuración del proyecto: android/gradle.properties, android/settings.gradle, android/build.gradle, etc.
+
+# IDE / editor settings (opcional)
 .vscode/
 .idea/
 *.iml
 
-# =========================
-# Android/Java
-# =========================
+# Expo (si aplica)
+.expo/
+.expo-shared/
+
+# iOS / Xcode
+ios/Pods/
+ios/Podfile.lock
+**/*.xcodeproj/xcuserdata/
+**/*.xcworkspace/xcuserdata/
+ios/.generated/
+ios/tmp/
+DerivedData/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Keystores / signing
 *.keystore
 *.jks
+
+# Android artifacts
 *.apk
 *.aar
 *.ap_
@@ -96,28 +114,16 @@ $RECYCLE.BIN/
 *.jar
 *.ear
 
-# =========================
-# iOS / Xcode
-# =========================
-*.pbxuser
-!default.pbxuser
-*.mode1v3
-!default.mode1v3
-*.mode2v3
-!default.mode2v3
-*.perspectivev3
-!default.perspectivev3
-xcuserdata/
-*.xccheckout
-*.moved-aside
-DerivedData/
-*.hmap
-*.ipa
-*.dSYM.zip
-*.dSYM
-
-# =========================
 # Misc
-# =========================
 *.swp
 *.swo
+
+# =========================
+# Notas importantes (no son líneas de .gitignore):
+# 1) Asegúrate de COMITEAR el wrapper de Gradle: Visualizador/android/gradlew  
+#    Visualizador/android/gradlew.bat  
+#    Visualizador/android/gradle/wrapper/gradle-wrapper.jar  
+#    Visualizador/android/gradle/wrapper/gradle-wrapper.properties
+# 2) Ignora android/local.properties (contiene rutas SDK locales) — ya incluido.
+# 3) Si quieres ignorar solo node_modules de carpetas específicas, reemplaza `node_modules/` por `/api/node_modules/` y `/Visualizador/node_modules/`.
+# 4) Si usas lockfiles, mantenlos en el repo: no deben estar en .gitignore.
