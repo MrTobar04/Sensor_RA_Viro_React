@@ -1,0 +1,26 @@
+name: ar_app
+description: Aplicación de AR para mostrar datos IoT
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.15.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  ar_flutter_plugin: 0.6.0  # Versión compatible con Dart 2.16.0
+  permission_handler: ^8.3.0
+  vector_math: ^2.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^1.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
