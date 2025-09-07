@@ -1,68 +1,228 @@
+import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
-import 'ar_screen.dart';
+import 'package:ar_flutter_plugin/ar_flutter_plugin.dart';
+import 'package:ar_flutter_plugin/datatypes/config_planedetection.dart';
+import 'package:ar_flutter_plugin/datatypes/node_types.dart';
+import 'package:ar_flutter_plugin/managers/ar_anchor_manager.dart';
+import 'package:ar_flutter_plugin/managers/ar_location_manager.dart';
+import 'package:ar_flutter_plugin/managers/ar_object_manager.dart';
+import 'package:ar_flutter_plugin/managers/ar_session_manager.dart';
+import 'package:ar_flutter_plugin/models/ar_anchor.dart';
+import 'package:ar_flutter_plugin/models/ar_node.dart';
+import 'package:vector_math/vector_math_64.dart' as vector_math;
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'AR App',
+      title: 'AR IoT Sensors',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const HomeScreen(),
+      home: ARViewScreen(),
     );
   }
 }
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+class ARViewScreen extends StatefulWidget {
+  @override
+  _ARViewScreenState createState() => _ARViewScreenState();
+}
+
+class _ARViewScreenState extends State<ARViewScreen> {
+  ARSessionManager? arSessionManager;
+  ARObjectManager? arObjectManager;
+  ARAnchorManager? arAnchorManager;
+
+  ARAnchor? currentAnchor; // Cambiado: almacenar el objeto anchor completo
+  List<ARNode> nodes = [];
+  SensorData sensorData = SensorData();
+
+  Timer? sensorTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    sensorTimer = Timer.periodic(Duration(seconds: 2), (timer) {
+      setState(() {
+        sensorData.updateData();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    sensorTimer?.cancel();
+    // Limpiar anchor y nodes al salir
+    if (currentAnchor != null) {
+      arAnchorManager?.removeAnchor(currentAnchor!);
+    }
+    super.dispose();
+  }
+
+  void onARViewCreated(
+      ARSessionManager arSessionManager,
+      ARObjectManager arObjectManager,
+      ARAnchorManager arAnchorManager,
+      ARLocationManager arLocationManager) {
+    this.arSessionManager = arSessionManager;
+    this.arObjectManager = arObjectManager;
+    this.arAnchorManager = arAnchorManager;
+
+    this.arSessionManager!.onInitialize(
+          showFeaturePoints: false,
+          showPlanes: true,
+          showWorldOrigin: true,
+          handlePans: true,
+          handleRotation: true,
+        );
+    this.arObjectManager!.onInitialize();
+
+    this.arSessionManager!.onPlaneOrPointTap = onPlaneTap;
+  }
+
+  Future<void> onPlaneTap(List<dynamic> hitTestResults) async {
+    if (hitTestResults.isEmpty) return;
+    
+    var singleHitTestResult = hitTestResults.first;
+
+    // Crear nuevo anchor
+    var newAnchor = ARPlaneAnchor(
+        transformation: singleHitTestResult.worldTransform);
+    
+    bool? didAddAnchor = await arAnchorManager!.addAnchor(newAnchor);
+    
+    if (didAddAnchor == true) {
+      // Limpiar anchor anterior si existe
+      if (currentAnchor != null) {
+        await arAnchorManager!.removeAnchor(currentAnchor!);
+      }
+      nodes.clear();
+      
+      setState(() {
+        currentAnchor = newAnchor;
+      });
+      
+      await addObject(newAnchor);
+    }
+  }
+
+  Future<void> addObject(ARPlaneAnchor anchor) async {
+    try {
+      var sensorNode = ARNode(
+          type: NodeType.webGLB, // Usar webGLB ya que 'cube' no existe en NodeType
+          uri: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
+          scale: vector_math.Vector3(0.1, 0.1, 0.1),
+          position: vector_math.Vector3(0, 0.05, 0),
+          rotation: vector_math.Vector4(0, 0, 0, 0));
+      
+      bool? didAddNode = await arObjectManager!.addNode(sensorNode, planeAnchor: anchor);
+      
+      if (didAddNode == true) {
+        setState(() {
+          nodes.add(sensorNode);
+        });
+      }
+    } catch (e) {
+      print("Error adding object: $e");
+    }
+  }
+
+  Future<void> removeAllAnchors() async {
+    if (currentAnchor != null) {
+      await arAnchorManager!.removeAnchor(currentAnchor!);
+      setState(() {
+        currentAnchor = null;
+        nodes.clear();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AR App'),
+        title: Text('Sensor IoT en AR'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.delete),
+            onPressed: removeAllAnchors,
+          )
+        ],
       ),
-      body: Center(
+      body: Container(
+        child: ARView(
+          onARViewCreated: onARViewCreated,
+          planeDetectionConfig: PlaneDetectionConfig.horizontalAndVertical,
+        ),
+      ),
+      bottomSheet: Container(
+        padding: EdgeInsets.all(16),
+        color: Colors.black54,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.augmented_reality, size: 64, color: Colors.blue),
-            const SizedBox(height: 20),
-            const Text(
-              'Experiencia de Realidad Aumentada',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Toque el botón para iniciar la experiencia AR',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ARScreen()),
-                );
-              },
-              icon: const Icon(Icons.camera),
-              label: const Text('IniciAR AR'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-              ),
-            ),
+            Text('Datos del Sensor IoT:', 
+                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Text('Temperatura: ${sensorData.temperature.toStringAsFixed(1)}°C',
+                 style: TextStyle(color: Colors.white)),
+            Text('Humedad: ${sensorData.humidity.toStringAsFixed(1)}%',
+                 style: TextStyle(color: Colors.white)),
+            Text('Presión: ${sensorData.pressure.toStringAsFixed(1)} hPa',
+                 style: TextStyle(color: Colors.white)),
+            SizedBox(height: 8),
+            Text('Toque en una superficie plana para colocar el sensor',
+                 style: TextStyle(color: Colors.yellow, fontSize: 12)),
+            SizedBox(height: 4),
+            Text(currentAnchor != null ? 'Sensor colocado ✓' : 'Esperando superficie...',
+                 style: TextStyle(color: currentAnchor != null ? Colors.green : Colors.orange)),
           ],
         ),
       ),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            onPressed: () {
+              setState(() {
+                sensorData.updateData();
+              });
+            },
+            child: Icon(Icons.refresh),
+            tooltip: 'Actualizar datos',
+          ),
+          SizedBox(height: 10),
+          if (currentAnchor != null)
+          FloatingActionButton(
+            onPressed: removeAllAnchors,
+            child: Icon(Icons.delete_forever),
+            tooltip: 'Eliminar sensor',
+            backgroundColor: Colors.red,
+          ),
+        ],
+      ),
     );
+  }
+}
+
+class SensorData {
+  double temperature = 0.0;
+  double humidity = 0.0;
+  double pressure = 0.0;
+  Random random = Random();
+
+  void updateData() {
+    temperature = 20.0 + random.nextDouble() * 15.0;
+    humidity = 30.0 + random.nextDouble() * 50.0;
+    pressure = 1000.0 + random.nextDouble() * 50.0;
   }
 }
