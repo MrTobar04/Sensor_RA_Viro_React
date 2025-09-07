@@ -1,6 +1,7 @@
-# Nombre de la Aplicación React Native
+# Sensor_RA_Viro_React
 
-Breve descripción de tu aplicación React Native. Explica para qué sirve y qué funcionalidades principales ofrece.
+Aplicación móvil multiplataforma que permita visualizar,
+mediante Realidad Aumentada (AR), los datos en tiempo real de un sensor IoT simulado.
 
 ## 📋 Prerrequisitos
 
