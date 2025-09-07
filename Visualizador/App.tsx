@@ -1,7 +1,7 @@
 // App.tsx
 import React, { useCallback, useEffect, useState } from 'react';
 import { SafeAreaView, StyleSheet, Platform } from 'react-native';
-import { ViroARSceneNavigator } from '@viro-community/react-viro';
+import { ViroARSceneNavigator } from '@reactvision/react-viro';
 import OverlayCard from './app/components/OverlayCard';
 import { fetchSensors, Sensor } from './app/api';
 import ARScene from './app/ar/ARScene';
@@ -27,7 +27,7 @@ export default function App() {
   return (
     <SafeAreaView style={styles.container}>
       <ViroARSceneNavigator
-        initialScene={{ scene: ARScene }}
+        initialScene={{ scene: () => <ARScene /> }}
         // Se puede pasar viroAppProps si necesitas enviar props a la escena
         // viroAppProps={{ sensor }}
         style={styles.ar}

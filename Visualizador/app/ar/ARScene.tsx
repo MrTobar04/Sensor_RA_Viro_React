@@ -6,8 +6,8 @@ import {
   Viro3DObject,
   ViroAmbientLight,
   ViroARPlane,
-  ViroARSceneNavigator,
-} from '@viro-community/react-viro';
+  // ViroARSceneNavigator, // Not used in this file
+} from '@reactvision/react-viro';
 import { fetchSensors } from '../api';
 
 export default function ARScene(props: any) {
